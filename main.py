@@ -1,7 +1,9 @@
 import subprocess
 import json
 import tempfile
-import os
+import os 
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+import pygame
 from pathlib import Path
 import cv2
 from rich.console import Console
