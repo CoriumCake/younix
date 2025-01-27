@@ -21,7 +21,11 @@ class YoutubeBrowser:
     def __init__(self, cache_dir: Optional[str] = None):
         self.console = Console()
         self.temp_dir = Path(tempfile.mkdtemp())
-        pygame.mixer.init()  
+        
+        # Initialize pygame and mixer with proper settings
+        pygame.init()
+        pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=2048)
+        
         # Initialize cache directories
         self.cache_dir = Path(cache_dir) if cache_dir else Path.home() / '.younix_cache'
         self.video_cache_dir = self.cache_dir / 'videos'
@@ -77,13 +81,17 @@ class YoutubeBrowser:
             return []
 
     def play_video(self, video_url: str) -> None:
-        self._clear_screen()  # Clear screen before playback
-        
-        cache_key = self._get_cache_key(video_url)
-        cached_video_path = self.video_cache_dir / f"{cache_key}.mp4"
-        cached_audio_path = self.video_cache_dir / f"{cache_key}.mp3"
-        
         try:
+            # Ensure mixer is initialized before playing
+            if not pygame.mixer.get_init():
+                pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=2048)
+            
+            self._clear_screen()  # Clear screen before playback
+            
+            cache_key = self._get_cache_key(video_url)
+            cached_video_path = self.video_cache_dir / f"{cache_key}.mp4"
+            cached_audio_path = self.video_cache_dir / f"{cache_key}.mp3"
+            
             output_path = self._get_or_download_video(video_url, cached_video_path)
             if not output_path:
                 return
@@ -104,10 +112,9 @@ class YoutubeBrowser:
                     return
             
         except Exception as e:
-            self.console.print(f"[red]Unexpected error during playback: {e}[/red]")
+            self.console.print(f"Error playing video: {str(e)}", style="bold red")
         finally:
-            pygame.mixer.music.stop()
-            pygame.mixer.quit()
+            pygame.mixer.quit()  # Clean up mixer when done
             self._clear_screen()  # Clear screen after playback
 
     def _get_or_download_video(self, video_url: str, cached_path: Path) -> Optional[Path]:
@@ -212,7 +219,6 @@ class YoutubeBrowser:
                 self.console.print("[red]Audio file not found![/red]")
                 return
                 
-            pygame.mixer.init()
             pygame.mixer.music.load(str(audio_path))
             pygame.mixer.music.play()
             
